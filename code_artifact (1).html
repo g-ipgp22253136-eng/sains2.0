@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小仙女的梦幻科学农场</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pinky: {
+                            50: '#fdf2f8',
+                            100: '#fce7f3',
+                            200: '#fbcfe8',
+                            300: '#f472b6',
+                            400: '#e879f9',
+                            500: '#ec4899',
+                            600: '#db2777',
+                        },
+                        farm: {
+                            soil: '#8d5b4c',
+                            grass: '#a3e635',
+                            plant: '#22c55e'
+                        }
+                    },
+                    fontFamily: {
+                        cute: ['"ZCOOL KuaiLe"', 'cursive', 'sans-serif'],
+                        main: ['Nunito', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', 'ZCOOL KuaiLe', sans-serif;
+            background: linear-gradient(135deg, #fbcfe8 0%, #ffe4e6 50%, #fef3c7 100%);
+            touch-action: manipulation;
+        }
+        .cute-font {
+            font-family: 'ZCOOL KuaiLe', cursive;
+        }
+        /* 农田泥土网格纹理 */
+        .plot-soil {
+            background-color: #8d5b4c;
+            background-image: radial-gradient(#6b4033 15%, transparent 16%), radial-gradient(#6b4033 15%, transparent 16%);
+            background-size: 12px 12px;
+            background-position: 0 0, 6px 6px;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .plot-ready {
+            box-shadow: 0 0 15px #facc15, inset 0 4px 8px rgba(0,0,0,0.3);
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border {
+            0%, 100% { border-color: #facc15; }
+            50% { border-color: #ef4444; }
+        }
+        /* 摇摆动画 */
+        .sway {
+            animation: sway 2s ease-in-out infinite alternate;
+        }
+        @keyframes sway {
+            0% { transform: rotate(-5deg); }
+            100% { transform: rotate(5deg); }
+        }
+        /* 浮动飘字效果 */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.2); }
+        }
+        .float-text {
+            animation: floatUp 1.2s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-10 flex flex-col items-center select-none">
+
+    <!-- 主容器 -->
+    <div class="w-full max-w-4xl px-2 sm:px-4 py-3">
+
+        <!-- 顶部游戏导航与资源栏 -->
+        <header class="bg-white/80 backdrop-blur-md rounded-3xl p-3 shadow-lg border-4 border-pink-300 mb-4 flex flex-wrap items-center justify-between gap-2">
+            <!-- 农场名称 -->
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 rounded-full bg-pink-400 flex items-center justify-center text-white text-xl shadow-md">
+                    <i class="fa-solid fa-wand-sparkles"></i>
+                </div>
+                <div>
+                    <h1 class="cute-font text-xl md:text-2xl text-pink-600 drop-shadow">梦幻科学农场</h1>
+                    <p class="text-xs text-pink-400 font-semibold">一年级科学·单元4,5,6</p>
+                </div>
+            </div>
+
+            <!-- 资源计数器 -->
+            <div class="flex items-center gap-2 md:gap-4 text-xs md:text-sm font-bold">
+                <!-- 金币 -->
+                <div class="bg-amber-100 border-2 border-amber-300 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-inner">
+                    <i class="fa-solid fa-coins text-amber-500 text-base"></i>
+                    <span id="coin-count" class="text-amber-800">0</span>
+                </div>
+                <!-- 钻石/奖杯 -->
+                <div class="bg-purple-100 border-2 border-purple-300 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-inner">
+                    <i class="fa-solid fa-gem text-purple-500 text-base"></i>
+                    <span id="gem-count" class="text-purple-800">0</span>
+                </div>
+                <!-- 加速肥料 -->
+                <div class="bg-green-100 border-2 border-green-300 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-inner">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-500 text-base"></i>
+                    <span id="fertilizer-count" class="text-emerald-800">0</span>
+                </div>
+                <!-- 音效切换 -->
+                <button id="btn-sound" onclick="toggleSound()" class="w-8 h-8 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 flex items-center justify-center transition">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 主功能切换标签页按钮 -->
+        <nav class="grid grid-cols-4 gap-2 mb-4">
+            <button onclick="switchTab('farm')" id="tab-farm" class="tab-btn bg-pink-500 text-white font-bold py-2.5 rounded-2xl shadow-md flex items-center justify-center gap-1.5 text-sm md:text-base transition hover:scale-105">
+                <i class="fa-solid fa-wheat-awn"></i> 梦幻农田
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn bg-white text-pink-600 font-bold py-2.5 rounded-2xl shadow-md flex items-center justify-center gap-1.5 text-sm md:text-base hover:bg-pink-100 transition hover:scale-105">
+                <i class="fa-solid fa-graduation-cap"></i> 科学研讨室
+            </button>
+            <button onclick="switchTab('shop')" id="tab-shop" class="tab-btn bg-white text-pink-600 font-bold py-2.5 rounded-2xl shadow-md flex items-center justify-center gap-1.5 text-sm md:text-base hover:bg-pink-100 transition hover:scale-105">
+                <i class="fa-solid fa-store"></i> 种子&装饰
+            </button>
+            <button onclick="switchTab('barn')" id="tab-barn" class="tab-btn bg-white text-pink-600 font-bold py-2.5 rounded-2xl shadow-md flex items-center justify-center gap-1.5 text-sm md:text-base hover:bg-pink-100 transition hover:scale-105">
+                <i class="fa-solid fa-warehouse"></i> 农场仓库
+            </button>
+        </nav>
+
+        <!-- 浮动文字容器 -->
+        <div id="float-container" class="fixed inset-0 pointer-events-none z-50"></div>
+
+        <!-- ================= PAGE 1: 梦幻农田 (FARM) ================= -->
+        <section id="page-farm" class="page-content block">
+            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 md:p-6 shadow-xl border-4 border-pink-200">
+                
+                <!-- 当前选中的种子提示栏 -->
+                <div class="flex items-center justify-between bg-pink-50 rounded-2xl p-3 border-2 border-pink-200 mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-pink-700">当前手持种子:</span>
+                        <span id="current-seed-tag" class="bg-pink-500 text-white font-bold text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                            🌱 胡萝卜种子
+                        </span>
+                    </div>
+                    <button onclick="switchTab('shop')" class="text-xs bg-amber-400 hover:bg-amber-500 text-white font-bold px-3 py-1.5 rounded-xl shadow transition">
+                        切换/购买种子
+                    </button>
+                </div>
+
+                <!-- 农田网格 (3x3 9块田) -->
+                <div class="grid grid-cols-3 gap-3 md:gap-5 max-w-lg mx-auto">
+                    <!-- 9块土地动态填充 -->
+                    <div id="plots-container" class="contents"></div>
+                </div>
+
+                <!-- 农场底部操作提示 -->
+                <div class="mt-6 text-center bg-amber-50 rounded-2xl p-3 border border-amber-200 text-amber-800 text-xs md:text-sm">
+                    <i class="fa-solid fa-lightbulb text-amber-500 mr-1"></i> 
+                    <strong>提示：</strong> 点击空地播种，成熟后点击收割！如果想要作物快速成熟，可以去<strong>【科学研讨室】</strong>答题赚取加速魔法肥料哦！
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 2: 科学研讨室 (QUIZ) ================= -->
+        <section id="page-quiz" class="page-content hidden">
+            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 md:p-6 shadow-xl border-4 border-purple-200">
+                
+                <!-- 答题进度与统计 -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="cute-font text-lg text-purple-700">
+                        <i class="fa-solid fa-brain text-purple-500 mr-1"></i> 科学挑战关卡
+                    </span>
+                    <span class="bg-purple-100 text-purple-800 font-bold text-xs md:text-sm px-3 py-1 rounded-full">
+                        进度: <span id="quiz-progress-text">1 / 50</span> 题
+                    </span>
+                </div>
+
+                <!-- 答题卡片 -->
+                <div class="bg-gradient-to-b from-purple-50 to-pink-50 rounded-2xl p-4 md:p-6 border-2 border-purple-200 shadow-inner mb-4">
+                    <!-- 单元标签 -->
+                    <div class="mb-2">
+                        <span id="quiz-unit-badge" class="bg-purple-500 text-white text-xs font-bold px-2.5 py-1 rounded-md">
+                            单元4: 人类
+                        </span>
+                    </div>
+
+                    <!-- 题目文本 -->
+                    <h2 id="quiz-question" class="text-base md:text-lg font-bold text-slate-800 mb-6 leading-relaxed">
+                        加载题目中...
+                    </h2>
+
+                    <!-- 选项列表 -->
+                    <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <!-- 动态生成的选项按钮 -->
+                    </div>
+                </div>
+
+                <!-- 答案解析 Modal/Box -->
+                <div id="quiz-explanation" class="hidden bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 mb-4">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-500 text-xl mt-0.5"></i>
+                        <div>
+                            <h4 id="explain-title" class="font-bold text-emerald-800 text-sm">回答正确！</h4>
+                            <p id="explain-text" class="text-xs md:text-sm text-emerald-700 mt-1">这里是题目解析内容...</p>
+                        </div>
+                    </div>
+                    <button onclick="nextQuestion()" class="mt-3 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 rounded-xl text-sm shadow transition">
+                        下一题 <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+                <!-- 奖励说明 -->
+                <div class="flex items-center justify-around bg-purple-50 rounded-2xl p-3 border border-purple-200 text-xs text-purple-800">
+                    <div class="flex items-center gap-1">
+                        <i class="fa-solid fa-coins text-amber-500"></i>
+                        答对奖励: <strong>+20 金币</strong>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <i class="fa-solid fa-wand-magic-sparkles text-emerald-500"></i>
+                        额外获得: <strong>+1 魔法肥料</strong>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= PAGE 3: 种子与装饰商店 (SHOP) ================= -->
+        <section id="page-shop" class="page-content hidden">
+            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 md:p-6 shadow-xl border-4 border-amber-200">
+                <h2 class="cute-font text-xl text-amber-600 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-store"></i> 梦幻农场集市
+                </h2>
+
+                <!-- 商店分类标签 -->
+                <div class="flex gap-2 mb-4">
+                    <button onclick="toggleShopCategory('seeds')" id="btn-shop-seeds" class="bg-amber-500 text-white font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow">
+                        🌱 农作物种子
+                    </button>
+                    <button onclick="toggleShopCategory('decor')" id="btn-shop-decor" class="bg-slate-200 text-slate-700 font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow hover:bg-slate-300">
+                        🎀 梦幻装饰品
+                    </button>
+                </div>
+
+                <!-- 种子货架 -->
+                <div id="shop-seeds-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <!-- 动态渲染种子列表 -->
+                </div>
+
+                <!-- 装饰品货架 -->
+                <div id="shop-decor-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <!-- 动态渲染装饰品 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= PAGE 4: 农场仓库 (BARN) ================= -->
+        <section id="page-barn" class="page-content hidden">
+            <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 md:p-6 shadow-xl border-4 border-amber-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="cute-font text-xl text-amber-800 flex items-center gap-2">
+                        <i class="fa-solid fa-warehouse"></i> 储藏大农仓
+                    </h2>
+                    <button onclick="sellAllCrops()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs md:text-sm px-3 py-1.5 rounded-xl shadow transition">
+                        <i class="fa-solid fa-hand-holding-dollar"></i> 一键卖出收获
+                    </button>
+                </div>
+
+                <!-- 仓库物品列表 -->
+                <div id="barn-items-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    <!-- 动态渲染仓库物品 -->
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- 音效 JS (Web Audio API) -->
+    <script>
+        // 音效生成器
+        let soundEnabled = true;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            if (!audioCtx) audioCtx = new AudioContext();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.05);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'plant') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'harvest') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.setValueAtTime(880, now + 0.1); // A5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.setValueAtTime(180, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btn-sound');
+            btn.innerHTML = soundEnabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+        }
+    </script>
+
+    <!-- 游戏核心逻辑 JS -->
+    <script>
+        // 游戏数据定义
+        const seedTypes = [
+            { id: 'carrot', name: '胡萝卜', icon: '🥕', cost: 0, sellPrice: 15, growTime: 8, reqLevel: 1 },
+            { id: 'strawberry', name: '草莓', icon: '🍓', cost: 15, sellPrice: 35, growTime: 12, reqLevel: 1 },
+            { id: 'corn', name: '玉米', icon: '🌽', cost: 30, sellPrice: 70, growTime: 20, reqLevel: 1 },
+            { id: 'sunflower', name: '向日葵', icon: '🌻', cost: 50, sellPrice: 120, growTime: 30, reqLevel: 1 },
+            { id: 'magic_flower', name: '梦幻仙花', icon: '🌸', cost: 100, sellPrice: 250, growTime: 45, reqLevel: 1 }
+        ];
+
+        const decorTypes = [
+            { id: 'windmill', name: '粉色风车', icon: '🎡', cost: 150, bought: false },
+            { id: 'bear_light', name: '小熊草坪灯', icon: '🧸', cost: 200, bought: false },
+            { id: 'rainbow_arch', name: '彩虹拱门', icon: '🌈', cost: 350, bought: false },
+            { id: 'penguin_pond', name: '企鹅池塘', icon: '🐧', cost: 500, bought: false }
+        ];
+
+        // 50道完整科学题目 (涵盖单元4、5、6)
+        const quizQuestions = [
+            // --- 单元4: 人类 (感觉器官) ---
+            { unit: "单元4: 人类", q: "我们用哪种感觉器官来看书中美丽的图画？", options: ["耳朵", "眼睛", "鼻子"], ans: 1, explain: "眼睛是我们的视觉器官，用来观察颜色、形状和图案！" },
+            { unit: "单元4: 人类", q: "小红听到了好听的音乐，她是使用了什么器官？", options: ["耳朵", "舌头", "皮肤"], ans: 0, explain: "耳朵是听觉器官，用来聆听各种声音。" },
+            { unit: "单元4: 人类", q: "妈妈做好了香喷喷的蛋糕，我们可以用什么感知香味？", options: ["眼睛", "鼻子", "皮肤"], ans: 1, explain: "鼻子是嗅觉器官，能闻到香气和异味。" },
+            { unit: "单元4: 人类", q: "尝一口冰淇淋，知道它是甜甜的，这是因为用了什么？", options: ["舌头", "耳朵", "鼻子"], ans: 0, explain: "舌头是味觉器官，能尝出酸、甜、苦、辣、咸。" },
+            { unit: "单元4: 人类", q: "摸一摸小猫咪的毛，觉得软软的，这是使用了什么感觉？", options: ["视觉", "听觉", "触觉（皮肤）"], ans: 2, explain: "皮肤是触觉器官，能感知冷热、软硬和粗糙。" },
+            { unit: "单元4: 人类", q: "当我们闭上眼睛时，我们可以通过哪种感觉来确认身边播放的音乐？", options: ["视觉", "听觉", "味觉"], ans: 1, explain: "听觉可以在看不见的情况下聆听声音。" },
+            { unit: "单元4: 人类", q: "下列哪项物品需要用到【嗅觉】来感受？", options: ["花朵的香味", "皮球的圆形状", "铃铛的声音"], ans: 0, explain: "花朵的香味需要用鼻子（嗅觉）来闻。" },
+            { unit: "单元4: 人类", q: "如果不小心踩到了冰块觉得很冰，这是哪种感觉器官的作用？", options: ["眼睛", "皮肤", "舌头"], ans: 1, explain: "皮肤分布在全身，能感觉到冰冷和温暖。" },
+            { unit: "单元4: 人类", q: "彩虹有七种好看的颜色，我们要用什么器官观察？", options: ["耳朵", "眼睛", "舌头"], ans: 1, explain: "观察颜色需要使用眼睛（视觉）。" },
+            { unit: "单元4: 人类", q: "柠檬吃起来酸酸的，这属于哪种感觉？", options: ["味觉", "触觉", "嗅觉"], ans: 0, explain: "舌头能尝出酸味，属于味觉。" },
+            { unit: "单元4: 人类", q: "下雨天打雷的声音很大，我们是用什么感官感知的？", options: ["听觉", "视觉", "味觉"], ans: 0, explain: "打雷声是由耳朵（听觉）接收到的。" },
+            { unit: "单元4: 人类", q: "摸到刺刺的仙人掌立刻缩手，这是使用了什么感官？", options: ["触觉", "嗅觉", "视觉"], ans: 0, explain: "触觉能感知疼痛和刺痛的感觉。" },
+            { unit: "单元4: 人类", q: "戴上遮光眼罩后，哪种感官会暂时无法使用？", options: ["视觉", "听觉", "触觉"], ans: 0, explain: "眼罩遮住了眼睛，所以视觉暂时无法发挥作用。" },
+            { unit: "单元4: 人类", q: "做饭时闻到焦味知道菜烧焦了，这是利用了什么？", options: ["嗅觉", "听觉", "味觉"], ans: 0, explain: "用鼻子闻到烧焦的味道属于嗅觉。" },
+            { unit: "单元4: 人类", q: "我们可以同时用眼睛和什么感官来欣赏一场有声有色的动画片？", options: ["耳朵（听觉）", "舌头（味觉）", "鼻子（嗅觉）"], ans: 0, explain: "看动画片需要眼睛看画面，耳朵听声音。" },
+            { unit: "单元4: 人类", q: "判断温水和冰水最快的方法是用皮肤感觉水的什么？", options: ["温度（冷热）", "颜色", "声音"], ans: 0, explain: "皮肤可以感知物体的温度（冷热）。" },
+
+            // --- 单元5: 动物 (部位、食性与移动) ---
+            { unit: "单元5: 动物", q: "小鸟能在天空飞翔，主要是靠什么身体部位？", options: ["翅膀和羽毛", "硬角", "鳞片"], ans: 0, explain: "鸟类的翅膀和羽毛帮助它们在空中飞翔。" },
+            { unit: "单元5: 动物", q: "鱼儿能在水里自由自在地游泳，是因为它们拥有什么？", options: ["鳍和尾巴", "翅膀", "羽毛"], ans: 0, explain: "鱼类的鳍和尾巴帮助它们在水里保持平衡与游动。" },
+            { unit: "单元5: 动物", q: "牛和羊头上硬硬的部位叫什么？", options: ["角", "喙", "外壳"], ans: 0, explain: "角可以保护牛羊不受侵害。" },
+            { unit: "单元5: 动物", q: "小鸡和小鸭用来啄食食物的嘴巴叫作什么？", options: ["喙 (huì)", "角", "鳞片"], ans: 0, explain: "鸟类和家禽尖尖的嘴巴叫做“喙”。" },
+            { unit: "单元5: 动物", q: "乌龟背上硬硬的部位有什么作用？", options: ["保护身体", "帮助飞翔", "用来呼吸"], ans: 0, explain: "乌龟的外壳坚硬，可以保护它软软的身体。" },
+            { unit: "单元5: 动物", q: "下列哪种动物的身体表面覆盖着【鳞片】？", options: ["鱼和蛇", "兔子和小狗", "小鸟和孔雀"], ans: 0, explain: "鱼类和爬行动物（如蛇）身体表面长有鳞片。" },
+            { unit: "单元5: 动物", q: "兔子是怎样移动的？", options: ["跳跃", "游泳", "飞翔"], ans: 0, explain: "兔子后腿强壮，主要是靠跳跃移动。" },
+            { unit: "单元5: 动物", q: "袋鼠后腿有力，它主要的移动方式是什么？", options: ["跳", "爬", "飞"], ans: 0, explain: "袋鼠也是靠跳跃来快速移动的。" },
+            { unit: "单元5: 动物", q: "青蛙既能在陆地上跳，也能在水里做什么？", options: ["游泳", "飞翔", "奔跑"], ans: 0, explain: "青蛙后脚有蹼，能在水里欢快地游泳。" },
+            { unit: "单元5: 动物", q: "蜗牛没有脚，它是怎么移动的？", options: ["慢慢蠕动/爬行", "飞翔", "跳跃"], ans: 0, explain: "蜗牛靠腹足肌肉收缩在地上爬行。" },
+            { unit: "单元5: 动物", q: "老虎和狮子只吃其他动物的肉，它们属于什么食性？", options: ["肉食动物", "草食动物", "杂食动物"], ans: 0, explain: "只吃肉类的动物称为肉食动物。" },
+            { unit: "单元5: 动物", q: "大熊猫最喜欢吃竹叶，它属于什么食性？", options: ["草食动物", "肉食动物", "杂食动物"], ans: 0, explain: "只吃植物（如竹叶、草）的动物称为草食动物。" },
+            { unit: "单元5: 动物", q: "小鸡既吃小虫子（肉），也吃谷物（植物），它属于什么？", options: ["杂食动物", "肉食动物", "草食动物"], ans: 0, explain: "既吃植物也吃动物的属于杂食动物。" },
+            { unit: "单元5: 动物", q: "猴子喜欢吃香蕉，也会吃昆虫，它是什么食性？", options: ["杂食动物", "草食动物", "肉食动物"], ans: 0, explain: "猴子属于杂食动物。" },
+            { unit: "单元5: 动物", q: "老鹰具有尖锐的爪子和弯曲的喙，主要用来做什么？", options: ["捕抓和撕碎猎物", "采蜜", "吸引注意"], ans: 0, explain: "老鹰是肉食鸟类，尖爪和弯喙利于捕食。" },
+            { unit: "单元5: 动物", q: "下列哪种动物会【飞】？", options: ["蝴蝶", "猫咪", "金鱼"], ans: 0, explain: "蝴蝶拥有翅膀，可以在空中飞翔。" },
+            { unit: "单元5: 动物", q: "猫咪身体表面覆盖着什么，可以保持温暖？", options: ["毛发", "羽毛", "外壳"], ans: 0, explain: "猫咪等哺乳动物身上覆盖着柔软的毛发。" },
+
+            // --- 单元6: 植物 (部位与功能) ---
+            { unit: "单元6: 植物", q: "植物吸取土壤里的水份和养分，主要是靠哪个部位？", options: ["根", "花", "果实"], ans: 0, explain: "根深深扎在泥土里，吸收水份和矿物质。" },
+            { unit: "单元6: 植物", q: "植物的哪一个部位支撑着整棵植物，使其直立？", options: ["茎", "叶子", "花朵"], ans: 0, explain: "茎是植物的“支柱”，负责输送水份和支撑植物。" },
+            { unit: "单元6: 植物", q: "植物大多数呈绿色，吸收阳光制造食物的部位是？", options: ["叶子", "根", "种子"], ans: 0, explain: "叶子含有叶绿素，能利用阳光制造食物。" },
+            { unit: "单元6: 植物", q: "植物鲜艳夺目、能吸引昆虫帮忙传粉的部位是？", options: ["花", "根", "茎"], ans: 0, explain: "美丽的花朵能吸引蜜蜂和蝴蝶传粉。" },
+            { unit: "单元6: 植物", q: "花朵谢了之后，通常会结出什么来包裹种子？", options: ["果实", "泥土", "树枝"], ans: 0, explain: "果实可以保护里面的种子。" },
+            { unit: "单元6: 植物", q: "把种子播种到泥土里，在适宜条件下会发芽成长为？", options: ["新植物", "石头", "小虫"], ans: 0, explain: "种子是新植物生命的开始。" },
+            { unit: "单元6: 植物", q: "大树的茎通常是硬硬的，我们称为什么茎？", options: ["木质茎", "草质茎", "软茎"], ans: 0, explain: "大树具有坚硬粗壮的“木质茎”。" },
+            { unit: "单元6: 植物", q: "小草和向日葵的茎比较柔软，称为什么茎？", options: ["草质茎", "木质茎", "石头茎"], ans: 0, explain: "比较柔软易弯曲的茎叫草质茎。" },
+            { unit: "单元6: 植物", q: "植物的叶子通常通过什么连结在茎上？", options: ["叶柄", "花瓣", "根尖"], ans: 0, explain: "叶柄将叶片连结在茎或树枝上。" },
+            { unit: "单元6: 植物", q: "吃苹果时，我们吃的是苹果树的哪一部分？", options: ["果实", "根", "叶子"], ans: 0, explain: "苹果是苹果树结出的甜美果实。" },
+            { unit: "单元6: 植物", q: "植物如果完全没有了【根】，会发生什么事？", options: ["无法吸收水份而枯萎", "长得更高", "结出更多果实"], ans: 0, explain: "没有根就无法吸收水份，植物会干枯死亡。" },
+            { unit: "单元6: 植物", q: "下列哪种植物会开出漂亮的花朵？", options: ["玫瑰", "苔藓", "蕨类"], ans: 0, explain: "玫瑰是开花植物。" },
+            { unit: "单元6: 植物", q: "西瓜里面黑黑小小的东西是什么？", options: ["种子", "根", "花朵"], ans: 0, explain: "西瓜籽就是西瓜的种子。" },
+            { unit: "单元6: 植物", q: "向日葵的花朵总是喜欢朝向哪边？", options: ["太阳", "月亮", "风吹的方向"], ans: 0, explain: "向日葵具有向光性，花朵朝向太阳。" },
+            { unit: "单元6: 植物", q: "植物生长需要水份、空气和什么？", options: ["阳光", "牛奶", "果汁"], ans: 0, explain: "阳光、水和空气是植物生长的基本需求。" },
+            { unit: "单元6: 植物", q: "我们要爱护植物，下列哪项做法是正确的？", options: ["定期浇水和晒太阳", "乱摘花朵", "踩踏小草"], ans: 0, explain: "给植物定期浇水和阳光才是爱护植物的行为！" }
+        ];
+
+        // 游戏全局数据状态
+        let coins = 0;
+        let gems = 0;
+        let fertilizers = 0;
+        let barn = {}; // 仓库记录 { id: count }
+        let selectedSeed = seedTypes[0]; // 当前选中的种子
+        let farmPlots = Array(9).fill(null).map((_, i) => ({ id: i, state: 'empty', crop: null, timer: 0, totalTime: 0 }));
+
+        // 给予新手第一个可直接收割/生长的初始作物
+        farmPlots[0] = { id: 0, state: 'ready', crop: seedTypes[0], timer: 0, totalTime: 8 };
+
+        // 答题引擎状态
+        let currentQuizIndex = 0;
+
+        // 初始化
+        window.onload = function() {
+            renderPlots();
+            renderShop();
+            renderBarn();
+            loadQuestion(0);
+            updateUI();
+
+            // 定时器：处理农作物生长计时
+            setInterval(gameLoop, 1000);
+        };
+
+        // UI 刷新
+        function updateUI() {
+            document.getElementById('coin-count').innerText = coins;
+            document.getElementById('gem-count').innerText = gems;
+            document.getElementById('fertilizer-count').innerText = fertilizers;
+
+            // 手持种子提示
+            document.getElementById('current-seed-tag').innerText = `${selectedSeed.icon} ${selectedSeed.name}种子`;
+        }
+
+        // 页面切换
+        function switchTab(tab) {
+            playSound('click');
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-pink-500', 'text-white');
+                btn.classList.add('bg-white', 'text-pink-600');
+            });
+
+            document.getElementById(`page-${tab}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.remove('bg-white', 'text-pink-600');
+            activeBtn.classList.add('bg-pink-500', 'text-white');
+
+            if (tab === 'barn') renderBarn();
+        }
+
+        // ================= 农场逻辑 (FARM) =================
+        function renderPlots() {
+            const container = document.getElementById('plots-container');
+            container.innerHTML = '';
+
+            farmPlots.forEach((plot, index) => {
+                const plotEl = document.createElement('div');
+                plotEl.className = `plot-soil rounded-3xl h-28 sm:h-36 relative flex flex-col items-center justify-center cursor-pointer border-4 transition transform hover:scale-105 ${plot.state === 'ready' ? 'plot-ready border-amber-300' : 'border-amber-800/40'}`;
+                
+                plotEl.onclick = () => handlePlotClick(index);
+
+                if (plot.state === 'empty') {
+                    plotEl.innerHTML = `<span class="text-xs text-amber-200/60 font-bold">点击播种</span>`;
+                } else if (plot.state === 'growing') {
+                    const progressPercent = Math.min(100, Math.floor(((plot.totalTime - plot.timer) / plot.totalTime) * 100));
+                    plotEl.innerHTML = `
+                        <div class="text-2xl sm:text-3xl sway mb-1">🌱</div>
+                        <div class="w-3/4 bg-black/40 rounded-full h-2 border border-white/20 overflow-hidden">
+                            <div class="bg-emerald-400 h-full transition-all duration-1000" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <span class="text-[10px] text-white font-bold mt-1">${plot.timer}s</span>
+                        ${fertilizers > 0 ? `<button onclick="event.stopPropagation(); useFertilizer(${index})" class="absolute top-1 right-1 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full shadow border border-white">⚡加速</button>` : ''}
+                    `;
+                } else if (plot.state === 'ready') {
+                    plotEl.innerHTML = `
+                        <div class="text-4xl sm:text-5xl sway drop-shadow-md mb-1">${plot.crop.icon}</div>
+                        <span class="bg-amber-400 text-amber-900 font-extrabold text-[10px] sm:text-xs px-2 py-0.5 rounded-full shadow animate-bounce">
+                            可收割！
+                        </span>
+                    `;
+                }
+
+                container.appendChild(plotEl);
+            });
+        }
+
+        function handlePlotClick(index) {
+            const plot = farmPlots[index];
+
+            if (plot.state === 'empty') {
+                // 检查金币是否够买种子
+                if (coins < selectedSeed.cost) {
+                    showFloatText(`金币不足！需要 ${selectedSeed.cost} 金币`, event.clientX, event.clientY, 'text-rose-500');
+                    playSound('wrong');
+                    return;
+                }
+
+                coins -= selectedSeed.cost;
+                plot.state = 'growing';
+                plot.crop = selectedSeed;
+                plot.timer = selectedSeed.growTime;
+                plot.totalTime = selectedSeed.growTime;
+
+                playSound('plant');
+                showFloatText(`播种 ${selectedSeed.name}`, event.clientX, event.clientY, 'text-emerald-600');
+                updateUI();
+                renderPlots();
+
+            } else if (plot.state === 'ready') {
+                // 收割
+                const cropId = plot.crop.id;
+                barn[cropId] = (barn[cropId] || 0) + 1;
+
+                playSound('harvest');
+                showFloatText(`+1 ${plot.crop.name} ${plot.crop.icon}`, event.clientX, event.clientY, 'text-amber-500');
+
+                // 重置土地
+                plot.state = 'empty';
+                plot.crop = null;
+                plot.timer = 0;
+
+                updateUI();
+                renderPlots();
+            }
+        }
+
+        // 使用加速肥料
+        function useFertilizer(plotIndex) {
+            if (fertilizers <= 0) return;
+            const plot = farmPlots[plotIndex];
+            if (plot && plot.state === 'growing') {
+                fertilizers--;
+                plot.timer = 0;
+                plot.state = 'ready';
+                playSound('harvest');
+                updateUI();
+                renderPlots();
+            }
+        }
+
+        // 游戏时间循环 (每秒)
+        function gameLoop() {
+            let updated = false;
+            farmPlots.forEach(plot => {
+                if (plot.state === 'growing') {
+                    plot.timer--;
+                    if (plot.timer <= 0) {
+                        plot.state = 'ready';
+                    }
+                    updated = true;
+                }
+            });
+            if (updated) renderPlots();
+        }
+
+        // ================= 答题逻辑 (QUIZ) =================
+        function loadQuestion(index) {
+            if (index >= quizQuestions.length) {
+                index = 0; // 循环或提示通关
+            }
+            currentQuizIndex = index;
+            const q = quizQuestions[index];
+
+            document.getElementById('quiz-progress-text').innerText = `${index + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-unit-badge').innerText = q.unit;
+            document.getElementById('quiz-question').innerText = q.q;
+
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+
+            q.options.forEach((opt, optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full bg-white hover:bg-purple-100 text-slate-700 font-bold p-3 md:p-4 rounded-xl border-2 border-purple-200 shadow-sm text-left text-sm md:text-base transition flex items-center gap-2';
+                btn.innerHTML = `<span class="w-6 h-6 rounded-full bg-purple-200 text-purple-700 text-xs flex items-center justify-center font-extrabold">${String.fromCharCode(65 + optIdx)}</span> ${opt}`;
+                btn.onclick = () => checkAnswer(optIdx);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quiz-explanation').classList.add('hidden');
+        }
+
+        function checkAnswer(selectedOpt) {
+            const q = quizQuestions[currentQuizIndex];
+            const explainBox = document.getElementById('quiz-explanation');
+            const explainTitle = document.getElementById('explain-title');
+            const explainText = document.getElementById('explain-text');
+
+            if (selectedOpt === q.ans) {
+                // 回答正确
+                playSound('correct');
+                coins += 20;
+                fertilizers += 1;
+                gems += 1;
+
+                explainTitle.innerText = "🎉 回答正确！太棒了！";
+                explainTitle.className = "font-bold text-emerald-800 text-sm";
+                explainBox.className = "bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4 mb-4";
+                explainText.innerText = `${q.explain} (获得 +20金币, +1魔法肥料)`;
+
+                updateUI();
+            } else {
+                // 回答错误
+                playSound('wrong');
+                explainTitle.innerText = "❌ 差一点点就对啦，再接再厉！";
+                explainTitle.className = "font-bold text-rose-800 text-sm";
+                explainBox.className = "bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 mb-4";
+                explainText.innerText = `正确答案是: ${q.options[q.ans]}。解析: ${q.explain}`;
+            }
+
+            explainBox.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            playSound('click');
+            loadQuestion(currentQuizIndex + 1);
+        }
+
+        // ================= 商店逻辑 (SHOP) =================
+        function renderShop() {
+            // 渲染种子商店
+            const seedsGrid = document.getElementById('shop-seeds-grid');
+            seedsGrid.innerHTML = '';
+
+            seedTypes.forEach(seed => {
+                const card = document.createElement('div');
+                card.className = 'bg-amber-50 rounded-2xl p-3 border-2 border-amber-200 flex flex-col items-center shadow-sm';
+                card.innerHTML = `
+                    <div class="text-4xl mb-1">${seed.icon}</div>
+                    <h3 class="font-bold text-amber-900 text-sm">${seed.name}</h3>
+                    <p class="text-xs text-amber-600 mb-2">成熟时间: ${seed.growTime}秒</p>
+                    <button onclick="selectSeed('${seed.id}')" class="w-full ${selectedSeed.id === seed.id ? 'bg-emerald-500' : 'bg-amber-400 hover:bg-amber-500'} text-white font-bold py-1.5 rounded-xl text-xs transition">
+                        ${selectedSeed.id === seed.id ? '当前选择中' : `种植单价: ${seed.cost}金币`}
+                    </button>
+                `;
+                seedsGrid.appendChild(card);
+            });
+
+            // 渲染装饰商店
+            const decorGrid = document.getElementById('shop-decor-grid');
+            decorGrid.innerHTML = '';
+
+            decorTypes.forEach(decor => {
+                const card = document.createElement('div');
+                card.className = 'bg-pink-50 rounded-2xl p-3 border-2 border-pink-200 flex flex-col items-center shadow-sm';
+                card.innerHTML = `
+                    <div class="text-4xl mb-1">${decor.icon}</div>
+                    <h3 class="font-bold text-pink-900 text-sm">${decor.name}</h3>
+                    <p class="text-xs text-pink-500 mb-2">梦幻农场专属装饰</p>
+                    <button onclick="buyDecor('${decor.id}')" class="w-full ${decor.bought ? 'bg-gray-300 text-gray-600' : 'bg-pink-400 hover:bg-pink-500 text-white'} font-bold py-1.5 rounded-xl text-xs transition">
+                        ${decor.bought ? '已拥有' : `购买: ${decor.cost}金币`}
+                    </button>
+                `;
+                decorGrid.appendChild(card);
+            });
+        }
+
+        function toggleShopCategory(cat) {
+            playSound('click');
+            if (cat === 'seeds') {
+                document.getElementById('shop-seeds-grid').classList.remove('hidden');
+                document.getElementById('shop-decor-grid').classList.add('hidden');
+                document.getElementById('btn-shop-seeds').className = 'bg-amber-500 text-white font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow';
+                document.getElementById('btn-shop-decor').className = 'bg-slate-200 text-slate-700 font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow hover:bg-slate-300';
+            } else {
+                document.getElementById('shop-seeds-grid').classList.add('hidden');
+                document.getElementById('shop-decor-grid').classList.remove('hidden');
+                document.getElementById('btn-shop-decor').className = 'bg-pink-500 text-white font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow';
+                document.getElementById('btn-shop-seeds').className = 'bg-slate-200 text-slate-700 font-bold text-xs md:text-sm px-4 py-2 rounded-xl shadow hover:bg-slate-300';
+            }
+        }
+
+        function selectSeed(seedId) {
+            playSound('click');
+            const found = seedTypes.find(s => s.id === seedId);
+            if (found) {
+                selectedSeed = found;
+                updateUI();
+                renderShop();
+                switchTab('farm');
+            }
+        }
+
+        function buyDecor(decorId) {
+            const decor = decorTypes.find(d => d.id === decorId);
+            if (!decor || decor.bought) return;
+
+            if (coins >= decor.cost) {
+                coins -= decor.cost;
+                decor.bought = true;
+                playSound('harvest');
+                updateUI();
+                renderShop();
+                showFloatText(`成功购买 ${decor.name}!`, event.clientX, event.clientY, 'text-pink-500');
+            } else {
+                playSound('wrong');
+                showFloatText(`金币不足！需要 ${decor.cost} 金币`, event.clientX, event.clientY, 'text-rose-500');
+            }
+        }
+
+        // ================= 仓库逻辑 (BARN) =================
+        function renderBarn() {
+            const grid = document.getElementById('barn-items-grid');
+            grid.innerHTML = '';
+
+            let hasItems = false;
+
+            Object.keys(barn).forEach(cropId => {
+                const count = barn[cropId];
+                if (count > 0) {
+                    hasItems = true;
+                    const cropInfo = seedTypes.find(s => s.id === cropId);
+                    const card = document.createElement('div');
+                    card.className = 'bg-amber-50 rounded-2xl p-3 border-2 border-amber-200 flex flex-col items-center';
+                    card.innerHTML = `
+                        <div class="text-3xl mb-1">${cropInfo.icon}</div>
+                        <div class="font-bold text-xs text-amber-900">${cropInfo.name}</div>
+                        <div class="text-xs text-amber-600 font-bold mt-0.5">数量: x${count}</div>
+                        <button onclick="sellSingleCrop('${cropId}')" class="mt-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] px-2 py-1 rounded-lg w-full">
+                            卖出 (+${cropInfo.sellPrice}金币)
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+
+            if (!hasItems) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-amber-700/60 font-bold text-xs">
+                        仓库空空如也，快去耕种并收获农作物吧！
+                    </div>
+                `;
+            }
+        }
+
+        function sellSingleCrop(cropId) {
+            if (barn[cropId] && barn[cropId] > 0) {
+                const cropInfo = seedTypes.find(s => s.id === cropId);
+                barn[cropId]--;
+                coins += cropInfo.sellPrice;
+                playSound('click');
+                updateUI();
+                renderBarn();
+            }
+        }
+
+        function sellAllCrops() {
+            let totalEarned = 0;
+            Object.keys(barn).forEach(cropId => {
+                const count = barn[cropId];
+                if (count > 0) {
+                    const cropInfo = seedTypes.find(s => s.id === cropId);
+                    totalEarned += count * cropInfo.sellPrice;
+                    barn[cropId] = 0;
+                }
+            });
+
+            if (totalEarned > 0) {
+                coins += totalEarned;
+                playSound('harvest');
+                updateUI();
+                renderBarn();
+                showFloatText(`售出所有收获，获得 +${totalEarned}金币！`, window.innerWidth/2, window.innerHeight/2, 'text-amber-500');
+            }
+        }
+
+        // 飘字动画特效
+        function showFloatText(text, x, y, colorClass = 'text-amber-500') {
+            const container = document.getElementById('float-container');
+            const el = document.createElement('div');
+            el.className = `absolute font-extrabold text-sm md:text-base ${colorClass} float-text pointer-events-none drop-shadow`;
+            el.style.left = `${x || window.innerWidth/2}px`;
+            el.style.top = `${y || window.innerHeight/2}px`;
+            el.innerText = text;
+
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+    </script>
+</body>
+</html>
